@@ -15,7 +15,7 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
 )
-logger = logging.getLogger(name)
+logger = logging.getLogger(__name__)
 
 PHRASES_FILE = "phrases.txt"
 
@@ -111,7 +111,7 @@ def main() -> None:
         
     except Exception as e:
         logger.error(f"Помилка запуску бота: {e}")
-if name == "main":
+if __name__ == "__main__":
     # Створюємо файл з фразами при першому запуску
     if not os.path.exists(PHRASES_FILE):
         load_phrases()
