@@ -106,9 +106,10 @@ handle_mention
     except Exception as e:
         logger.error(f"Помилка запуску бота: {e}")
 
-if name == "main":
+if __name__ == "__main__":
     # Створюємо файл з фразами при першому запуску
     if not os.path.exists(PHRASES_FILE):
         load_phrases()
     main()
+
 
