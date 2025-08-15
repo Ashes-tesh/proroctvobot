@@ -6,7 +6,7 @@ from telebot.types import Message, MessageEntity
 from flask import Flask
 
 # Створюємо Flask додаток
-app = Flask(name)
+app = Flask(__name__)
 
 @app.route('/')
 def home():
@@ -114,5 +114,6 @@ if __name__ == "__main__":
     logger.info("🔮 Бот-пророк запущено! Напиши /start щоб почати")
     logger.info("🌐 Flask сервер запущено на порті %s", os.environ.get('PORT', 8080))
     bot.infinity_polling()
+
 
 
