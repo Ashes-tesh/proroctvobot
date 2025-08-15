@@ -15,7 +15,7 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
 )
-logger = logging.getLogger(name)
+logger = logging.getLogger(name)  # Виправлено: name замість name
 
 PHRASES_FILE = "phrases.txt"
 
@@ -23,12 +23,6 @@ def load_phrases():
     """Завантажує фрази з файлу, створює файл з дефолтними фразами якщо не існує"""
     if not os.path.exists(PHRASES_FILE):
         default_phrases = [
-            "Ти знайдеш кота на дереві",
-            "Завтра тебе чекає приємна несподіванка",
-            "Нікому в чаті не подобається з тобою спілкуватися",
-            "Твоя кава завтра пролиється на клавіатуру",
-            "Ти виграєш у лотерею, але квиток загубиш",
-            "Знайдеш 100 гривень на зупинці"
         ]
         with open(PHRASES_FILE, "w", encoding="utf-8") as f:
             f.write("\n".join(default_phrases))
@@ -92,7 +86,7 @@ def main() -> None:
         return
     
     try:
-        # Створюємо Application без використання Updater
+        # Створюємо Application
         application = Application.builder().token(TOKEN).build()
         
         # Реєстрація обробників команд
@@ -102,7 +96,7 @@ def main() -> None:
         # Обробник тегів у повідомленнях
         application.add_handler(MessageHandler(
             filters.TEXT & filters.Entity("mention"),
-            handle_mention
+handle_mention
         ))
         
         # Запуск бота
@@ -111,6 +105,7 @@ def main() -> None:
         
     except Exception as e:
         logger.error(f"Помилка запуску бота: {e}")
+
 if name == "main":
     # Створюємо файл з фразами при першому запуску
     if not os.path.exists(PHRASES_FILE):
