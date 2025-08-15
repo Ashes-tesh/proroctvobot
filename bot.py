@@ -15,7 +15,7 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
 )
-logger = logging.getLogger(name)  # Виправлено: name замість name
+logger = logging.getLogger(__name__) 
 
 PHRASES_FILE = "phrases.txt"
 
@@ -111,3 +111,4 @@ if name == "main":
     if not os.path.exists(PHRASES_FILE):
         load_phrases()
     main()
+
