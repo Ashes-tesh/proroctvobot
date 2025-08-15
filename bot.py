@@ -1,23 +1,18 @@
 import os
 import random
 import logging
-from telegram import Update
-from telegram.ext import (
-    Application,
-    CommandHandler,
-    MessageHandler,
-    filters,
-    ContextTypes
-)
+import telebot
+from telebot.types import Message, MessageEntity
 
 # Налаштування логування
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
 )
-logger = logging.getLogger(__name__) 
+logger = logging.getLogger(__name__)
 
 PHRASES_FILE = "phrases.txt"
+bot = telebot.TeleBot(os.getenv("BOT_TOKEN"))
 
 def load_phrases():
     """Завантажує фрази з файлу, створює файл з дефолтними фразами якщо не існує"""
@@ -30,86 +25,59 @@ def load_phrases():
     with open(PHRASES_FILE, "r", encoding="utf-8") as f:
         return [line.strip() for line in f.readlines() if line.strip()]
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+@bot.message_handler(commands=['start'])
+def start(message: Message):
     """Обробник команди /start"""
-    await update.message.reply_text("🔮 Привіт! Я бот-пророк. Просто тегни мене у чаті, щоб отримати предсказание")
+    bot.reply_to(message, "🔮 Привіт! Я бот-пророк. Просто тегни мене у чаті, щоб отримати предсказание")
 
-async def add_phrase(update: Update, context: ContextTypes.DEFAULT_TYPE):
+@bot.message_handler(commands=['addphrase'])
+def add_phrase(message: Message):
     """Додає нову фразу у файл"""
-    if not context.args:
-        await update.message.reply_text("ℹ️ Використання: /addphrase [текст пророцтва]")
+    if not message.text or len(message.text.split()) < 2:
+        bot.reply_to(message, "ℹ️ Використання: /addphrase [текст пророцтва]")
         return
         
-    new_phrase = " ".join(context.args).strip()
+    new_phrase = " ".join(message.text.split()[1:]).strip()
     
     with open(PHRASES_FILE, "a", encoding="utf-8") as f:
         f.write("\n" + new_phrase)
     
-    await update.message.reply_text(f"✅ Додано нове пророцтво: «{new_phrase}»")
+    bot.reply_to(message, f"✅ Додано нове пророцтво: «{new_phrase}»")
 
-async def handle_mention(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Обробляє звернення до бота через тег у чаті"""
+@bot.message_handler(func=lambda message: True)
+def handle_all_messages(message: Message):
+    """Обробляє всі повідомлення, шукаючи згадки бота"""
     try:
-        message = update.message
-        if not message or not message.text:
+        if not message.text:
             return
             
-        user = message.from_user
-        bot = await context.bot.get_me()
-        bot_username = bot.username.lower()
+        bot_username = bot.get_me().username.lower()
         
         # Перевіряємо згадки у повідомленні
-        for entity in message.entities:
-            if entity.type == "mention":
-                mentioned_text = message.text[entity.offset:entity.offset + entity.length].lower()
-                
-                if mentioned_text == f"@{bot_username}":
-                    phrases = load_phrases()
-                    if not phrases:
-                        await message.reply_text("⚠️ Фрази відсутні! Адмін повинен додати їх у phrases.txt")
+        if message.entities:
+            for entity in message.entities:
+                if entity.type == "mention":
+                    mentioned_text = message.text[entity.offset:entity.offset + entity.length].lower()
+                    
+                    if mentioned_text == f"@{bot_username}":
+                        phrases = load_phrases()
+                        if not phrases:
+                            bot.reply_to(message, "⚠️ Фрази відсутні! Адмін повинен додати їх у phrases.txt")
+                            return
+                        
+                        chosen_phrase = random.choice(phrases)
+                        username = f"@{message.from_user.username}" if message.from_user.username else message.from_user.first_name
+                        response = f"Пророцтво для {username}:\n\n«{chosen_phrase}»"
+                        bot.reply_to(message, response)
                         return
-                    
-                    chosen_phrase = random.choice(phrases)
-                    username = f"@{user.username}" if user.username else user.first_name
-                    response = f"Пророцтво для {username}:\n\n«{chosen_phrase}»"
-                    await message.reply_text(response)
-                    return
-                    
     except Exception as e:
-        logger.error(f"Помилка обробки згадки: {e}")
-
-def main() -> None:
-    """Запуск бота"""
-    TOKEN = os.getenv("BOT_TOKEN")
-    if not TOKEN:
-        logger.error("Токен бота не знайдено! Встановіть змінну середовища BOT_TOKEN")
-        return
-    
-    try:
-        # Створюємо Application
-        application = Application.builder().token(TOKEN).build()
-        
-        # Реєстрація обробників команд
-        application.add_handler(CommandHandler("start", start))
-        application.add_handler(CommandHandler("addphrase", add_phrase))
-        
-        # Обробник тегів у повідомленнях
-        application.add_handler(MessageHandler(
-            filters.TEXT & filters.Entity("mention"),
-handle_mention
-        ))
-        
-        # Запуск бота
-        logger.info("🔮 Бот-пророк запущено! Напиши /start щоб почати")
-        application.run_polling()
-        
-    except Exception as e:
-        logger.error(f"Помилка запуску бота: {e}")
+        logger.error(f"Помилка обробки повідомлення: {e}")
 
 if __name__ == "__main__":
     # Створюємо файл з фразами при першому запуску
     if not os.path.exists(PHRASES_FILE):
         load_phrases()
-    main()
-
+    
+    logger.info("🔮 Бот-пророк запущено! Напиши /start щоб почати")
+    bot.infinity_polling()
 
