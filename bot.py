@@ -6,7 +6,7 @@ from telebot.types import Message, MessageEntity
 from flask import Flask
 
 # Створюємо Flask додаток
-app = Flask(__name__)
+app = Flask(name)
 
 @app.route('/')
 def home():
@@ -26,6 +26,10 @@ def load_phrases():
     """Завантажує фрази з файлу, створює файл з дефолтними фразами якщо не існує"""
     if not os.path.exists(PHRASES_FILE):
         default_phrases = [
+            "Ти знайдеш щастя у несподіваному місці",
+            "Нове знайомство змінить твоє життя",
+            "Гроші самі знайдуть шлях до твого гаманця",
+            "Подорож чекає на тебе найближчим часом"
         ]
         with open(PHRASES_FILE, "w", encoding="utf-8") as f:
             f.write("\n".join(default_phrases))
@@ -33,10 +37,27 @@ def load_phrases():
     with open(PHRASES_FILE, "r", encoding="utf-8") as f:
         return [line.strip() for line in f.readlines() if line.strip()]
 
+def get_random_prophecy(user):
+    """Генерує випадкове пророцтво для користувача"""
+    phrases = load_phrases()
+    if not phrases:
+        return "⚠️ Фрази відсутні! Адмін повинен додати їх у phrases.txt"
+    
+    chosen_phrase = random.choice(phrases)
+    username = f"@{user.username}" if user.username else user.first_name
+    return f"Пророцтво для {username}:\n\n«{chosen_phrase}»"
+
 @bot.message_handler(commands=['start'])
 def start(message: Message):
     """Обробник команди /start"""
-    bot.reply_to(message, "🔮 Привіт! Я бот-пророк. Просто тегни мене у чаті, щоб отримати предсказание")
+    bot.reply_to(message, "🔮 Привіт! Я бот-пророк. Просто тегни мене у чаті або напиши /did, щоб отримати предсказание")
+
+# ДОДАНО НОВУ КОМАНДУ /did
+@bot.message_handler(commands=['did'])
+def did_command(message: Message):
+    """Обробник команди /did - генерує випадкове пророцтво"""
+    prophecy = get_random_prophecy(message.from_user)
+    bot.reply_to(message, prophecy)
 
 @bot.message_handler(commands=['addphrase'])
 def add_phrase(message: Message):
@@ -68,15 +89,8 @@ def handle_all_messages(message: Message):
                     mentioned_text = message.text[entity.offset:entity.offset + entity.length].lower()
                     
                     if mentioned_text == f"@{bot_username}":
-                        phrases = load_phrases()
-                        if not phrases:
-                            bot.reply_to(message, "⚠️ Фрази відсутні! Адмін повинен додати їх у phrases.txt")
-                            return
-                        
-                        chosen_phrase = random.choice(phrases)
-                        username = f"@{message.from_user.username}" if message.from_user.username else message.from_user.first_name
-                        response = f"Пророцтво для {username}:\n\n«{chosen_phrase}»"
-                        bot.reply_to(message, response)
+                        prophecy = get_random_prophecy(message.from_user)
+                        bot.reply_to(message, prophecy)
                         return
     except Exception as e:
         logger.error(f"Помилка обробки повідомлення: {e}")
@@ -100,4 +114,5 @@ if __name__ == "__main__":
     logger.info("🔮 Бот-пророк запущено! Напиши /start щоб почати")
     logger.info("🌐 Flask сервер запущено на порті %s", os.environ.get('PORT', 8080))
     bot.infinity_polling()
+
 
