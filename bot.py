@@ -113,6 +113,7 @@ def run_flask():
     """Запускає Flask сервер"""
     port = int(os.environ.get('PORT', 8080))
     app.run(host='0.0.0.0', port=port)
+    
     if name == "main":
     # Створюємо файл з фразами при першому запуску
     if not os.path.exists(PHRASES_FILE):
@@ -127,3 +128,4 @@ def run_flask():
     logger.info("🔮 Бот-пророк запущено! Напиши /start щоб почати")
     logger.info("🌐 Flask сервер запущено на порті %s", os.environ.get('PORT', 8080))
     bot.infinity_polling()
+
