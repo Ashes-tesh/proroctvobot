@@ -6,7 +6,7 @@ from telebot.types import Message, MessageEntity
 from flask import Flask
 
 # Створюємо Flask додаток
-app = Flask(name)
+app = Flask(__name__)
 
 @app.route('/')
 def home():
@@ -17,7 +17,7 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
 )
-logger = logging.getLogger(name)
+logger = logging.getLogger(__name__)
 
 PHRASES_FILE = "phrases.txt"
 bot = telebot.TeleBot(os.getenv("BOT_TOKEN"))
@@ -114,7 +114,7 @@ def run_flask():
     port = int(os.environ.get('PORT', 8080))
     app.run(host='0.0.0.0', port=port)
 
-if name == "main":
+if __name__ == "__main__":
     # Створюємо файл з фразами при першому запуску
     if not os.path.exists(PHRASES_FILE):
         load_phrases()
