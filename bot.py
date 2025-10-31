@@ -6,7 +6,7 @@ from telebot.types import Message, MessageEntity
 from flask import Flask
 
 # Створюємо Flask додаток
-app = Flask(__name__)
+app = Flask(name)
 
 @app.route('/')
 def home():
@@ -17,7 +17,7 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
 )
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(name)
 
 PHRASES_FILE = "phrases.txt"
 bot = telebot.TeleBot(os.getenv("BOT_TOKEN"))
@@ -73,6 +73,20 @@ def add_phrase(message: Message):
     
     bot.reply_to(message, f"✅ Додано нове пророцтво: «{new_phrase}»")
 
+# ДОДАНО НОВУ КОМАНДУ /pencil
+@bot.message_handler(commands=['pencil'])
+def pencil_command(message: Message):
+    """Обробник команди /pencil - показує розмір пенсіла"""
+    user = message.from_user
+    username = f"@{user.username}" if user.username else user.first_name
+    size = random.randint(1, 30)  # Генеруємо випадкове число від 1 до 30
+    
+    # Створюємо відповідь у потрібному форматі
+    response = f"Розмір пенсіла {username}: {size} см."
+    
+    # Відправляємо відповідь
+    bot.reply_to(message, response)
+
 @bot.message_handler(func=lambda message: True)
 def handle_all_messages(message: Message):
     """Обробляє всі повідомлення, шукаючи згадки бота"""
@@ -99,8 +113,7 @@ def run_flask():
     """Запускає Flask сервер"""
     port = int(os.environ.get('PORT', 8080))
     app.run(host='0.0.0.0', port=port)
-
-if __name__ == "__main__":
+    if name == "main":
     # Створюємо файл з фразами при першому запуску
     if not os.path.exists(PHRASES_FILE):
         load_phrases()
@@ -114,7 +127,3 @@ if __name__ == "__main__":
     logger.info("🔮 Бот-пророк запущено! Напиши /start щоб почати")
     logger.info("🌐 Flask сервер запущено на порті %s", os.environ.get('PORT', 8080))
     bot.infinity_polling()
-
-
-
-
